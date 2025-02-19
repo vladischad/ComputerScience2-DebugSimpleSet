@@ -1,0 +1,128 @@
+1.  Error in isEmpty() 'getter':
+    
+    Original:
+    public boolean isEmpty() {
+		return (rear > 0);
+	}
+
+    Description:            In this case class would return true if the next open index (rear variable) was higher than 0. 
+                            This is a mistake in a code since if 'rear' is higher than 0 it means that set is actually not empty since it has more than 0 elements in it.
+
+    Debugged:
+    public boolean isEmpty() {
+		return (rear == 0);
+	}
+
+    Description:            I changed code by editing '>' sign to '=='. It fixed problem since now class would return true only if 'rear' is equal to 0.
+                            If 'rear' is equal to 0 it means that the next open index was not increased and that set is empty.
+                            If 'rear' is not equal to 0 it means that it is more than 0 which means that there are elements that were added to the set and it is not empty, 
+                            in this case class will return false.
+
+    How I found this bug:   In this case bug was pretty obvious and I even didn't have to use debugger. 
+                            I just read SimpleSet.java interface and learned what isEmpty() is supposed to do.
+                            I found this error by just reading through code and trying to understand it.
+
+    
+
+2.  Error in add() 'setter'
+    
+    Original:
+    public void add(T element) {
+		if (!contains(element)) {
+			if (rear >= setArray.length) {
+				expandCapacity();
+			}
+			setArray[rear] = element;
+		}
+	}
+
+    Description:            In this case class is suppose to add new 'element' to the set. 
+                            But this part of coude would give problems later in code since it doesn't include counter ('rear').
+                            Since we don't keep track of how many element there are in the set we wont be able to shift ALL elements from the set when we remove some element from it.
+
+    Debugged:
+    public void add(T element) {
+		if (!contains(element)) {
+			if (rear >= setArray.length) {
+				expandCapacity();
+			}
+			setArray[rear] = element;
+
+			rear += 1;
+		}
+	}
+
+    Description:            I just added part where we add 1 to the counder.
+                            Since we add new element to the array, we have to increase next open index ('rear') by 1 to keep track of amount of elements in the set
+
+    How I found this bug:   This bug was hard to find since it doesn't give error specifically in this part of code.
+                            This error doesn't crash program and tester doesn't show that problem is with this 'setter'.
+                            Instead tester fails tests with remove() class.
+                            I found this bug by using VS Code debugger. 
+                            I added some breakpoints to the remove() class and also I addes set variable to 'WATCH' screen and started tracking it when I remove elements from it.
+                            I noticed that something is wrong with 'rear' when romove() didn't shift all elemetns from the set (to which elements were added).
+                            It meant only that we didn't count element to 'rear' when we added it to the set.
+
+
+
+3.  Error in remove() 'setter'
+
+    Original:
+   public T remove(T element) {
+		T retVal = null;
+		int i = 0;
+		while (retVal == null && i < rear) {
+			if (setArray[i].equals(element)) {
+				retVal = setArray[i];
+				while (i < rear) {
+					setArray[i] = setArray[i+1];
+					i++;
+				}
+			}
+			i++;
+		}
+		if (retVal == null) {
+			throw new NoSuchElementException("ArraySet");
+		}
+		rear--;
+		return retVal;
+	}
+
+
+    Description:            In this part of code there was a problem with second while loop, which is meant to shift all elements after removed element one slod further (one unit less).
+                            The problem is that in this form code was giving 'ArrayIndexOutOfBoundsException'. 
+                            It means that code is trying to access element from the set that has position of more than set contains items.
+
+    Debugged:
+    public T remove(T element) {
+		T retVal = null;
+		int i = 0;
+		while (retVal == null && i < rear) {
+			if (setArray[i].equals(element)) {
+				retVal = setArray[i];
+				
+                while (i < rear - 1) {
+					
+                    setArray[i] = setArray[i+1];
+					i++;
+				}
+			}
+			i++;
+		}
+		if (retVal == null) {
+			throw new NoSuchElementException("ArraySet");
+		}
+		rear--;
+		return retVal;
+	}
+
+    Description:            To fix this problem I simply changed from (i < rear) to (i < rear - 1).
+                            Because in next line we are trying to access setArray[i+1], loop is not supposed to go further than (i+1).
+                            This loop is supposed to shift all elements after removed element one space forward (to slot with position which number is one less), 
+							which means that loop should stop when it shifts last element from set, 
+							which means that we shold stop when i = rear - 2 (or i < rear - 1) where (rear - 1) is the last element of the set.
+
+
+    How I found this bug:   In this case bug was pretty obvious and I found it very fast, right after I noticed 'ArrayIndexOutOfBoundsException'.
+                            This exception gave me exact location (line) in the code with possible bug.
+                            After I read code trying to understand logic of this class and found mistake.
